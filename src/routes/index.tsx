@@ -6,40 +6,47 @@ import {
   Calendar,
   Headphones,
   Instagram,
+  Lock,
   Mail,
   MapPin,
   Music,
-  Ticket,
+  Plus,
+  Trash2,
+  X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import heroImage from "../assets/dj-hero.jpg";
 
-// --- Einfach anpassen: Deine DJ-Daten ----------------
-const DJ_NAME = "DJ NOVA";
-const DJ_TAGLINE = "Electronic beats for the night";
-const DJ_EMAIL = "booking@djnova.de";
-const INSTAGRAM_URL = "https://instagram.com/djnova";
-const SOUNDCLOUD_URL = "https://soundcloud.com/djnova";
+// --- DJ-Daten -----------------------------------------
+const DJ_NAME = "DJ_Palme";
+const DJ_TAGLINE = "Elektronische Beats für die Nacht";
+const DJ_EMAIL = "fabian@drabner.de";
+const INSTAGRAM_URL = "https://instagram.com/dj_palme";
+const SOUNDCLOUD_URL = "https://soundcloud.com/dj_palme";
+const ADMIN_PASSWORD = "23699.DJ_Palmeweb";
 
-const GIGS = [
-  { date: "2026-08-14", venue: "Warehouse Club", city: "Berlin", tickets: "#" },
-  { date: "2026-09-02", venue: "Rooftop Sessions", city: "Hamburg", tickets: "#" },
-  { date: "2026-09-22", venue: "Basement Floor", city: "München", tickets: "#" },
+type Gig = { date: string; venue: string; city: string };
+const DEFAULT_GIGS: Gig[] = [
+  { date: "2026-08-14", venue: "Sommerfest", city: "Berlin" },
+  { date: "2026-09-02", venue: "Schulparty", city: "Hamburg" },
+  { date: "2026-09-22", venue: "Jugendclub", city: "München" },
 ];
-// -----------------------------------------------------
+const GIGS_STORAGE_KEY = "dj_palme_gigs_v1";
+// ------------------------------------------------------
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: `${DJ_NAME} — Electronic Beats for the Night` },
+      { title: `${DJ_NAME} — Elektronische Beats für die Nacht` },
       {
         name: "description",
-        content: `Offizielle Website von ${DJ_NAME}. Upcoming gigs, mixes und booking.`,
+        content: `Offizielle Website von ${DJ_NAME}. Kommende Events, Mixes und kostenlose Buchungsanfragen.`,
       },
-      { property: "og:title", content: `${DJ_NAME} — Electronic Beats for the Night` },
+      { property: "og:title", content: `${DJ_NAME} — Elektronische Beats für die Nacht` },
       {
         property: "og:description",
-        content: `Offizielle Website von ${DJ_NAME}. Upcoming gigs, mixes und booking.`,
+        content: `Offizielle Website von ${DJ_NAME}. Kommende Events, Mixes und kostenlose Buchungsanfragen.`,
       },
       { property: "og:url", content: "/" },
     ],
@@ -48,10 +55,43 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+function useGigs() {
+  const [gigs, setGigs] = useState<Gig[]>(DEFAULT_GIGS);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(GIGS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Gig[];
+        if (Array.isArray(parsed)) setGigs(parsed);
+      }
+    } catch {
+      // ignore
+    }
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(GIGS_STORAGE_KEY, JSON.stringify(gigs));
+    } catch {
+      // ignore
+    }
+  }, [gigs, loaded]);
+
+  const sorted = [...gigs].sort((a, b) => a.date.localeCompare(b.date));
+  return { gigs: sorted, setGigs };
+}
+
 function Index() {
+  const { gigs, setGigs } = useGigs();
+  const [adminOpen, setAdminOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
+      <Header onAdminClick={() => setAdminOpen(true)} />
       <main>
         <Hero />
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -60,42 +100,54 @@ function Index() {
               <BioCard />
             </div>
             <div className="lg:col-span-5">
-              <GigsCard />
+              <GigsCard gigs={gigs} />
             </div>
           </div>
         </section>
-        <NextGigFeature />
+        {gigs.length > 0 && <NextGigFeature next={gigs[0]} />}
         <ContactSection />
       </main>
       <Footer />
+      {adminOpen && (
+        <AdminModal
+          gigs={gigs}
+          onSave={setGigs}
+          onClose={() => setAdminOpen(false)}
+        />
+      )}
     </div>
   );
 }
 
-function Header() {
+function Header({ onAdminClick }: { onAdminClick: () => void }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+      {/* Versteckter Admin-Button in der oberen rechten Ecke */}
+      <button
+        type="button"
+        onClick={onAdminClick}
+        aria-label="Admin"
+        title=""
+        className="absolute right-0 top-0 z-50 h-6 w-6 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
+      >
+        <span className="sr-only">Admin</span>
+        <Lock className="h-3 w-3 text-muted-foreground" />
+      </button>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <a href="/" className="font-display text-lg font-bold tracking-tight text-foreground">
           {DJ_NAME}
         </a>
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
-          <a href="#gigs" className="transition-colors hover:text-foreground">
-            Gigs
-          </a>
-          <a href="#about" className="transition-colors hover:text-foreground">
-            About
-          </a>
-          <a href="#booking" className="transition-colors hover:text-foreground">
-            Booking
-          </a>
+          <a href="#events" className="transition-colors hover:text-foreground">Events</a>
+          <a href="#about" className="transition-colors hover:text-foreground">Über mich</a>
+          <a href="#booking" className="transition-colors hover:text-foreground">Booking</a>
         </nav>
         <a
-          href={`mailto:${DJ_EMAIL}`}
+          href={`mailto:${DJ_EMAIL}?subject=Kostenlose%20Buchungsanfrage%20${encodeURIComponent(DJ_NAME)}`}
           className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
         >
           <Mail className="h-4 w-4" />
-          <span className="hidden sm:inline">Book now</span>
+          <span className="hidden sm:inline">Kostenlos buchen</span>
         </a>
       </div>
     </header>
@@ -108,7 +160,7 @@ function Hero() {
       <div className="absolute inset-0">
         <img
           src={heroImage}
-          alt={`${DJ_NAME} performing in a club with neon lights`}
+          alt="DJ-Turntables und Mixer mit Neonlicht"
           className="h-full w-full object-cover"
           width={1920}
           height={1080}
@@ -124,7 +176,7 @@ function Hero() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
-          Now booking for 2026
+          Jetzt kostenlos buchbar
         </span>
         <h1 className="max-w-4xl font-display text-5xl font-bold leading-[0.95] tracking-tight text-foreground sm:text-7xl lg:text-8xl">
           {DJ_NAME}
@@ -138,7 +190,7 @@ function Hero() {
             className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 glow-indigo"
           >
             <Headphones className="h-4 w-4" />
-            Book {DJ_NAME}
+            {DJ_NAME} buchen
           </a>
           <a
             href={SOUNDCLOUD_URL}
@@ -147,7 +199,7 @@ function Hero() {
             className="inline-flex items-center gap-2 rounded-md border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-card"
           >
             <Music className="h-4 w-4" />
-            Listen to mixes
+            Mixes anhören
           </a>
         </div>
       </div>
@@ -161,56 +213,55 @@ function BioCard() {
       <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl transition-all group-hover:bg-primary/20" />
       <div className="relative">
         <span className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          About
+          Über mich
         </span>
         <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Sound first. Always.
+          Musik zuerst. Immer.
         </h2>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-          {DJ_NAME} ist ein aufstrebender DJ aus Deutschland mit einem Fokus auf elektronische
-          Clubmusik. Von tiefen House-Grooves bis zu treibenden Techno-Beats: jedes Set ist eine
-          Reise durch Nacht und Rhythmus.
+          Ich bin {DJ_NAME}, ein junger DJ aus Deutschland. Auch wenn ich erst 13 Jahre alt bin,
+          brenne ich schon jetzt für elektronische Musik – von House-Grooves bis zu treibenden
+          Beats. Jedes Set ist für mich eine Reise durch Rhythmus und Energie.
         </p>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Ob Club, Festival oder private Veranstaltung — {DJ_NAME} bringt die richtige Energie auf
-          die Bühne und lässt den Dancefloor nicht zur Ruhe kommen.
+          Ob Geburtstagsfeier, Schulparty, Jugendclub oder privates Event – ich bringe die richtige
+          Stimmung auf den Dancefloor. Alle Buchungen sind aktuell komplett kostenlos, weil ich vor
+          allem Erfahrung sammeln möchte.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-            House
-          </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-            Techno
-          </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-            Electronic
-          </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-            Club
-          </span>
+          {["House", "Electronic", "Party", "Club"].map((t) => (
+            <span key={t} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+              {t}
+            </span>
+          ))}
         </div>
       </div>
     </article>
   );
 }
 
-function GigsCard() {
+function GigsCard({ gigs }: { gigs: Gig[] }) {
   return (
-    <article id="gigs" className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+    <article id="events" className="rounded-2xl border border-border bg-card p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <span className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Upcoming Gigs
+          Kommende Events
         </span>
         <a
           href="#booking"
           className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
         >
-          Alle anfragen
+          Anfragen
           <ArrowRight className="h-3 w-3" />
         </a>
       </div>
       <div className="mt-6 space-y-4">
-        {GIGS.map((gig) => (
+        {gigs.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Aktuell sind keine Events geplant. Schreib mir gerne für eine Buchung!
+          </p>
+        )}
+        {gigs.map((gig) => (
           <div
             key={`${gig.date}-${gig.venue}`}
             className="flex items-start gap-4 rounded-xl border border-border bg-background p-4 transition-colors hover:border-primary/30"
@@ -230,13 +281,6 @@ function GigsCard() {
                 {gig.city}
               </div>
             </div>
-            <a
-              href={gig.tickets}
-              className="inline-flex items-center gap-1 rounded-md bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground transition-colors hover:bg-secondary/80"
-            >
-              <Ticket className="h-3.5 w-3.5" />
-              Tickets
-            </a>
           </div>
         ))}
       </div>
@@ -244,8 +288,7 @@ function GigsCard() {
   );
 }
 
-function NextGigFeature() {
-  const next = GIGS[0];
+function NextGigFeature({ next }: { next: Gig }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-8 sm:p-12">
@@ -253,7 +296,7 @@ function NextGigFeature() {
         <div className="relative flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div>
             <span className="font-display text-xs font-bold uppercase tracking-widest text-primary">
-              Next Show
+              Nächstes Event
             </span>
             <h2 className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
               {next.venue}, {next.city}
@@ -266,11 +309,11 @@ function NextGigFeature() {
             </div>
           </div>
           <a
-            href={next.tickets}
+            href="#booking"
             className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <Ticket className="h-4 w-4" />
-            Tickets sichern
+            <Mail className="h-4 w-4" />
+            Kostenlos anfragen
           </a>
         </div>
       </div>
@@ -279,6 +322,11 @@ function NextGigFeature() {
 }
 
 function ContactSection() {
+  const mailto = `mailto:${DJ_EMAIL}?subject=${encodeURIComponent(
+    `Kostenlose Buchungsanfrage ${DJ_NAME}`
+  )}&body=${encodeURIComponent(
+    "Hallo Fabian,\n\nich würde dich gerne für folgendes Event buchen:\n\nDatum:\nOrt:\nAnlass:\nAnsprechpartner:\n\nViele Grüße"
+  )}`;
   return (
     <section id="booking" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-border bg-card p-8 sm:p-12 lg:p-16">
@@ -287,15 +335,16 @@ function ContactSection() {
             Booking & Kontakt
           </span>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Lass uns zusammen arbeiten
+            Lass uns zusammen etwas Cooles machen
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            Clubs, Festivals, Private Events oder Podcasts — schreib mir für Buchungsanfragen,
-            Pressetexte und Rider.
+            Geburtstage, Schulpartys, Jugendclubs, private Events — schreib mir für eine Anfrage.
+            Alle Buchungen sind aktuell <span className="font-bold text-foreground">komplett kostenlos</span>,
+            weil ich Erfahrung sammeln möchte.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a
-              href={`mailto:${DJ_EMAIL}`}
+              href={mailto}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 glow-indigo"
             >
               <Mail className="h-4 w-4" />
@@ -312,7 +361,7 @@ function ContactSection() {
             </a>
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
-            Antwort innerhalb von 48 Stunden.
+            Antwort meistens innerhalb von 48 Stunden.
           </p>
         </div>
       </div>
@@ -326,36 +375,181 @@ function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-8">
         <p className="font-display text-sm font-bold text-foreground">{DJ_NAME}</p>
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} {DJ_NAME}. All rights reserved.
+          © {new Date().getFullYear()} {DJ_NAME}. Alle Rechte vorbehalten.
         </p>
         <div className="flex items-center gap-4">
-          <a
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Instagram"
-          >
+          <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Instagram">
             <Instagram className="h-5 w-5" />
           </a>
-          <a
-            href={SOUNDCLOUD_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="SoundCloud"
-          >
+          <a href={SOUNDCLOUD_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="SoundCloud">
             <Music className="h-5 w-5" />
           </a>
-          <a
-            href={`mailto:${DJ_EMAIL}`}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Email"
-          >
+          <a href={`mailto:${DJ_EMAIL}`} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="E-Mail">
             <Mail className="h-5 w-5" />
           </a>
         </div>
       </div>
     </footer>
+  );
+}
+
+function AdminModal({
+  gigs,
+  onSave,
+  onClose,
+}: {
+  gigs: Gig[];
+  onSave: (g: Gig[]) => void;
+  onClose: () => void;
+}) {
+  const [unlocked, setUnlocked] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  const [draft, setDraft] = useState<Gig[]>(gigs);
+  const [newGig, setNewGig] = useState<Gig>({ date: "", venue: "", city: "" });
+
+  useEffect(() => {
+    setDraft(gigs);
+  }, [gigs]);
+
+  function submitPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setUnlocked(true);
+      setError(false);
+    } else {
+      setError(true);
+    }
+  }
+
+  function removeGig(idx: number) {
+    setDraft((d) => d.filter((_, i) => i !== idx));
+  }
+
+  function addGig() {
+    if (!newGig.date || !newGig.venue || !newGig.city) return;
+    setDraft((d) => [...d, newGig]);
+    setNewGig({ date: "", venue: "", city: "" });
+  }
+
+  function saveAll() {
+    onSave(draft);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Schließen"
+          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {!unlocked ? (
+          <form onSubmit={submitPassword} className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              <h2 className="font-display text-xl font-bold text-foreground">Admin-Bereich</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">Bitte Passwort eingeben, um Events zu bearbeiten.</p>
+            <input
+              type="password"
+              autoFocus
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Passwort"
+              className="w-full rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            {error && <p className="text-sm text-red-400">Falsches Passwort.</p>}
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Entsperren
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <h2 className="font-display text-xl font-bold text-foreground">Events verwalten</h2>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {draft.length === 0 && (
+                <p className="text-sm text-muted-foreground">Noch keine Events.</p>
+              )}
+              {draft.map((g, idx) => (
+                <div key={idx} className="flex items-center gap-2 rounded-md border border-border bg-background p-2 text-sm">
+                  <span className="font-mono text-xs text-muted-foreground">{g.date}</span>
+                  <span className="flex-1 truncate text-foreground">{g.venue} — {g.city}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeGig(idx)}
+                    aria-label="Löschen"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Neues Event</p>
+              <input
+                type="date"
+                value={newGig.date}
+                onChange={(e) => setNewGig({ ...newGig, date: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <input
+                type="text"
+                placeholder="Location (z.B. Sommerfest)"
+                value={newGig.venue}
+                onChange={(e) => setNewGig({ ...newGig, venue: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <input
+                type="text"
+                placeholder="Stadt"
+                value={newGig.city}
+                onChange={(e) => setNewGig({ ...newGig, city: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={addGig}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                <Plus className="h-4 w-4" />
+                Hinzufügen
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={saveAll}
+                className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Speichern
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
