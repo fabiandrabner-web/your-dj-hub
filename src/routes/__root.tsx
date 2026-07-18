@@ -77,23 +77,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DJ NOVA — Electronic Beats for the Night" },
+      { title: "DJ_Palme — Harte Kicks Für jede Party" },
       {
         name: "description",
         content:
-          "Official website of DJ NOVA. Discover upcoming gigs, mixes, and booking information.",
+          "Offizielle Webseite von DJ_Palme",
       },
       { name: "author", content: "DJ NOVA" },
-      { property: "og:title", content: "DJ NOVA — Electronic Beats for the Night" },
+      { property: "og:title", content: "DJ_Palme — Harte Kicks Für jede Party" },
       {
         property: "og:description",
         content:
-          "Official website of DJ NOVA. Discover upcoming gigs, mixes, and booking information.",
+          "Offizielle Webseite von DJ_Palme",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "DJ NOVA" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@djnova" },
+      { name: "twitter:title", content: "DJ_Palme — Harte Kicks Für jede Party" },
+      { name: "twitter:description", content: "Offizielle Webseite von DJ_Palme" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/2MXNyj6b9zQTsTLqIKzjeAAzGPY2/social-images/social-1784392756333-ChatGPT_Image_18._Juli_2026,_16_49_29.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/2MXNyj6b9zQTsTLqIKzjeAAzGPY2/social-images/social-1784392756333-ChatGPT_Image_18._Juli_2026,_16_49_29.webp" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
