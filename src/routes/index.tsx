@@ -10,7 +10,6 @@ import {
   Lock,
   Mail,
   MapPin,
-  Music,
   CheckCircle2,
   AlertCircle,
   Plus,
