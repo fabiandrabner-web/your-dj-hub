@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from "react";
 
 import heroImage from "../assets/dj-hero.jpg";
+import logoAsset from "../assets/dj-palme-logo.png.asset.json";
 import { sendBookingRequest } from "@/lib/booking.functions";
 
 // --- DJ-Daten -----------------------------------------
@@ -150,8 +151,17 @@ function Header({
         <Lock className="h-3 w-3 text-muted-foreground" />
       </button>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <a href="/" className="font-display text-lg font-bold tracking-tight text-foreground">
-          {DJ_NAME}
+        <a href="/" className="flex items-center gap-3">
+          <img
+            src={logoAsset.url}
+            alt={`${DJ_NAME} Logo`}
+            className="h-10 w-10 rounded-md object-contain sm:h-11 sm:w-11"
+            width={44}
+            height={44}
+          />
+          <span className="font-display text-lg font-bold tracking-tight text-foreground">
+            {DJ_NAME}
+          </span>
         </a>
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
           <a href="#events" className="transition-colors hover:text-foreground">Events</a>
@@ -380,7 +390,17 @@ function Footer() {
   return (
     <footer className="border-t border-border bg-background">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-8">
-        <p className="font-display text-sm font-bold text-foreground">{DJ_NAME}</p>
+        <div className="flex items-center gap-2">
+          <img
+            src={logoAsset.url}
+            alt=""
+            aria-hidden="true"
+            className="h-8 w-8 rounded-md object-contain"
+            width={32}
+            height={32}
+          />
+          <p className="font-display text-sm font-bold text-foreground">{DJ_NAME}</p>
+        </div>
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} {DJ_NAME}. Alle Rechte vorbehalten.
         </p>
