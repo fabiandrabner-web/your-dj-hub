@@ -557,3 +557,202 @@ function AdminModal({
     </div>
   );
 }
+
+type BookingForm = {
+  name: string;
+  email: string;
+  phone: string;
+  date: string;
+  time: string;
+  location: string;
+  eventType: string;
+  guests: string;
+  message: string;
+};
+
+const EMPTY_BOOKING: BookingForm = {
+  name: "",
+  email: "",
+  phone: "",
+  date: "",
+  time: "",
+  location: "",
+  eventType: "",
+  guests: "",
+  message: "",
+};
+
+function BookingModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState<BookingForm>(EMPTY_BOOKING);
+  const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function update<K extends keyof BookingForm>(key: K, value: BookingForm[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    setError(null);
+    try {
+      await sendBookingRequest({ data: form });
+      setStatus("success");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Etwas ist schiefgelaufen. Bitte versuche es später erneut.",
+      );
+      setStatus("error");
+    }
+  }
+
+  const inputClass =
+    "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors";
+  const labelClass =
+    "block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1.5";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="relative my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Schließen"
+          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {status === "success" ? (
+          <div className="flex flex-col items-center py-8 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="font-display text-2xl font-bold text-foreground">Anfrage gesendet!</h2>
+            <p className="mt-3 max-w-md text-sm text-muted-foreground">
+              Vielen Dank für deine Anfrage. Ich melde mich meistens innerhalb von 48 Stunden per
+              E-Mail bei dir.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Schließen
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <Headphones className="h-5 w-5 text-primary" />
+                <h2 className="font-display text-xl font-bold text-foreground">
+                  Kostenlose Buchungsanfrage
+                </h2>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Fülle das Formular aus — deine Anfrage geht direkt an {DJ_EMAIL}.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Name</label>
+                <input required maxLength={100} className={inputClass}
+                  value={form.name} onChange={(e) => update("name", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>E-Mail</label>
+                <input required type="email" maxLength={255} className={inputClass}
+                  value={form.email} onChange={(e) => update("email", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Telefonnummer</label>
+                <input required type="tel" maxLength={50} className={inputClass}
+                  value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Gästeanzahl</label>
+                <input required inputMode="numeric" maxLength={50} className={inputClass}
+                  placeholder="z.B. 50"
+                  value={form.guests} onChange={(e) => update("guests", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Datum</label>
+                <input required type="date" className={inputClass}
+                  value={form.date} onChange={(e) => update("date", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Uhrzeit</label>
+                <input required type="time" className={inputClass}
+                  value={form.time} onChange={(e) => update("time", e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Veranstaltungsort</label>
+                <input required maxLength={200} className={inputClass}
+                  placeholder="Adresse oder Location"
+                  value={form.location} onChange={(e) => update("location", e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Art des Events</label>
+                <input required maxLength={100} className={inputClass}
+                  placeholder="z.B. Geburtstag, Schulparty, Jugendclub"
+                  value={form.eventType} onChange={(e) => update("eventType", e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Nachricht (optional)</label>
+                <textarea rows={4} maxLength={2000} className={inputClass}
+                  value={form.message} onChange={(e) => update("message", e.target.value)} />
+              </div>
+            </div>
+
+            {status === "error" && error && (
+              <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 glow-indigo"
+              >
+                {status === "sending" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sende…
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4" />
+                    Anfrage senden
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
