@@ -238,9 +238,9 @@ function BioCard() {
           Musik zuerst. Immer.
         </h2>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-          Ich bin {DJ_NAME}, ein junger DJ aus Deutschland. Auch wenn ich erst 13 Jahre alt bin,
-          brenne ich schon jetzt für elektronische Musik – von House-Grooves bis zu treibenden
-          Beats. Jedes Set ist für mich eine Reise durch Rhythmus und Energie.
+          Ich bin {DJ_NAME}, ein junger DJ aus Kürten. Auch wenn ich erst 13 Jahre alt bin,
+          brenne ich schon jetzt für elektronische Musik – von Uptempo bis zu EDM.
+          Jedes Set ist für mich eine Reise durch Rhythmus und Energie.
         </p>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
           Ob Geburtstagsfeier, Schulparty, Jugendclub oder privates Event – ich bringe die richtige
