@@ -358,15 +358,19 @@ function Footer() {
             src={logoAsset.url}
             alt=""
             aria-hidden="true"
-            className="h-8 w-8 rounded-md object-contain"
+            className="h-8 w-8 object-contain"
             width={32}
             height={32}
           />
           <p className="font-display text-sm font-bold text-foreground">{DJ_NAME}</p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} {DJ_NAME}. Alle Rechte vorbehalten.
-        </p>
+        <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground sm:items-center">
+          <p>© {new Date().getFullYear()} {DJ_NAME}. Alle Rechte vorbehalten.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
+            <Link to="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Instagram">
             <Instagram className="h-5 w-5" />
@@ -382,46 +386,55 @@ function Footer() {
 
 function AdminModal({
   gigs,
-  onSave,
   onClose,
 }: {
   gigs: Gig[];
-  onSave: (g: Gig[]) => void;
   onClose: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
-  const [draft, setDraft] = useState<Gig[]>(gigs);
-  const [newGig, setNewGig] = useState<Gig>({ date: "", venue: "", city: "" });
+  const [pwError, setPwError] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [newGig, setNewGig] = useState<{ date: string; venue: string; city: string }>({
+    date: "",
+    venue: "",
+    city: "",
+  });
 
-  useEffect(() => {
-    setDraft(gigs);
-  }, [gigs]);
+  const addMutation = useMutation({
+    mutationFn: (input: { date: string; venue: string; city: string }) =>
+      addGig({ data: { password, ...input } }),
+    onSuccess: () => {
+      setNewGig({ date: "", venue: "", city: "" });
+      setMutationError(null);
+      queryClient.invalidateQueries({ queryKey: ["gigs"] });
+    },
+    onError: (err: Error) => setMutationError(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteGig({ data: { password, id } }),
+    onSuccess: () => {
+      setMutationError(null);
+      queryClient.invalidateQueries({ queryKey: ["gigs"] });
+    },
+    onError: (err: Error) => setMutationError(err.message),
+  });
 
   function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
       setUnlocked(true);
-      setError(false);
+      setPwError(false);
     } else {
-      setError(true);
+      setPwError(true);
     }
   }
 
-  function removeGig(idx: number) {
-    setDraft((d) => d.filter((_, i) => i !== idx));
-  }
-
-  function addGig() {
+  function submitNewGig() {
     if (!newGig.date || !newGig.venue || !newGig.city) return;
-    setDraft((d) => [...d, newGig]);
-    setNewGig({ date: "", venue: "", city: "" });
-  }
-
-  function saveAll() {
-    onSave(draft);
-    onClose();
+    addMutation.mutate(newGig);
   }
 
   return (
@@ -451,7 +464,7 @@ function AdminModal({
               placeholder="Passwort"
               className="w-full rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-primary"
             />
-            {error && <p className="text-sm text-red-400">Falsches Passwort.</p>}
+            {pwError && <p className="text-sm text-red-400">Falsches Passwort.</p>}
             <button
               type="submit"
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
@@ -467,18 +480,19 @@ function AdminModal({
             </div>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {draft.length === 0 && (
+              {gigs.length === 0 && (
                 <p className="text-sm text-muted-foreground">Noch keine Events.</p>
               )}
-              {draft.map((g, idx) => (
-                <div key={idx} className="flex items-center gap-2 rounded-md border border-border bg-background p-2 text-sm">
+              {gigs.map((g) => (
+                <div key={g.id} className="flex items-center gap-2 rounded-md border border-border bg-background p-2 text-sm">
                   <span className="font-mono text-xs text-muted-foreground">{g.date}</span>
                   <span className="flex-1 truncate text-foreground">{g.venue} — {g.city}</span>
                   <button
                     type="button"
-                    onClick={() => removeGig(idx)}
+                    onClick={() => deleteMutation.mutate(g.id)}
+                    disabled={deleteMutation.isPending}
                     aria-label="Löschen"
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-red-400"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-red-400 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -510,28 +524,26 @@ function AdminModal({
               />
               <button
                 type="button"
-                onClick={addGig}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                onClick={submitNewGig}
+                disabled={addMutation.isPending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
               >
-                <Plus className="h-4 w-4" />
+                {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Hinzufügen
               </button>
             </div>
+
+            {mutationError && (
+              <p className="text-sm text-red-400">{mutationError}</p>
+            )}
 
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-              >
-                Abbrechen
-              </button>
-              <button
-                type="button"
-                onClick={saveAll}
                 className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Speichern
+                Fertig
               </button>
             </div>
           </div>
