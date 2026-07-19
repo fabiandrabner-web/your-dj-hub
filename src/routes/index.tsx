@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import {
@@ -17,10 +17,12 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import heroImage from "../assets/dj-hero.jpg";
-import logoAsset from "../assets/dj-palme-logo.png.asset.json";
+import logoAsset from "../assets/dj-palme-logo-v2.png.asset.json";
 import { sendBookingRequest } from "@/lib/booking.functions";
+import { addGig, deleteGig, listGigs, type Gig } from "@/lib/gigs.functions";
 
 // --- DJ-Daten -----------------------------------------
 const DJ_NAME = "DJ_Palme";
@@ -29,14 +31,6 @@ const DJ_EMAIL = "fabian@drabner.de";
 const INSTAGRAM_URL = "https://instagram.com/dj_palme_0fficial";
 const INSTAGRAM_HANDLE = "@dj_palme_0fficial";
 const ADMIN_PASSWORD = "23699.DJ_Palmeweb";
-
-type Gig = { date: string; venue: string; city: string };
-const DEFAULT_GIGS: Gig[] = [
-  { date: "2026-08-14", venue: "Sommerfest", city: "Berlin" },
-  { date: "2026-09-02", venue: "Schulparty", city: "Hamburg" },
-  { date: "2026-09-22", venue: "Jugendclub", city: "München" },
-];
-const GIGS_STORAGE_KEY = "dj_palme_gigs_v1";
 // ------------------------------------------------------
 
 export const Route = createFileRoute("/")({
@@ -59,38 +53,11 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function useGigs() {
-  const [gigs, setGigs] = useState<Gig[]>(DEFAULT_GIGS);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(GIGS_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Gig[];
-        if (Array.isArray(parsed)) setGigs(parsed);
-      }
-    } catch {
-      // ignore
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    try {
-      localStorage.setItem(GIGS_STORAGE_KEY, JSON.stringify(gigs));
-    } catch {
-      // ignore
-    }
-  }, [gigs, loaded]);
-
-  const sorted = [...gigs].sort((a, b) => a.date.localeCompare(b.date));
-  return { gigs: sorted, setGigs };
-}
-
 function Index() {
-  const { gigs, setGigs } = useGigs();
+  const { data: gigs = [] } = useQuery({
+    queryKey: ["gigs"],
+    queryFn: () => listGigs(),
+  });
   const [adminOpen, setAdminOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
 
@@ -119,11 +86,7 @@ function Index() {
       </main>
       <Footer />
       {adminOpen && (
-        <AdminModal
-          gigs={gigs}
-          onSave={setGigs}
-          onClose={() => setAdminOpen(false)}
-        />
+        <AdminModal gigs={gigs} onClose={() => setAdminOpen(false)} />
       )}
       {bookingOpen && <BookingModal onClose={() => setBookingOpen(false)} />}
     </div>
@@ -155,7 +118,7 @@ function Header({
           <img
             src={logoAsset.url}
             alt={`${DJ_NAME} Logo`}
-            className="h-10 w-10 rounded-md object-contain sm:h-11 sm:w-11"
+              className="h-10 w-10 object-contain sm:h-11 sm:w-11"
             width={44}
             height={44}
           />
