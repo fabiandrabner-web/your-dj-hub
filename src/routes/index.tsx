@@ -4,6 +4,8 @@ import { de } from "date-fns/locale";
 import {
   ArrowRight,
   Calendar,
+  Clock,
+  ExternalLink,
   Headphones,
   Instagram,
   Loader2,
@@ -20,7 +22,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import heroImage from "../assets/dj-hero.jpg";
-import logoAsset from "../assets/dj-palme-logo-v2.png.asset.json";
+import logoAsset from "../assets/dj-palme-logo.svg.asset.json";
 import { sendBookingRequest } from "@/lib/booking.functions";
 import { addGig, deleteGig, listGigs, type Gig } from "@/lib/gigs.functions";
 
@@ -60,6 +62,10 @@ function Index() {
   });
   const [adminOpen, setAdminOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+
+  const upcoming = gigs.filter((g) => g.status === "upcoming");
+  const past = [...gigs.filter((g) => g.status === "past")].reverse();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -70,17 +76,27 @@ function Index() {
       <main>
         <Hero onBookClick={() => setBookingOpen(true)} />
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-7">
-              <BioCard />
-            </div>
-            <div className="lg:col-span-5">
-              <GigsCard gigs={gigs} onBookClick={() => setBookingOpen(true)} />
-            </div>
+          <BioCard />
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <GigsColumn
+              title="Kommende Events"
+              gigs={upcoming}
+              onSelect={setSelectedGig}
+              onBookClick={() => setBookingOpen(true)}
+              tone="upcoming"
+              emptyText="Aktuell keine Events geplant. Schreib mir für eine Buchung!"
+            />
+            <GigsColumn
+              title="Vergangene Events"
+              gigs={past}
+              onSelect={setSelectedGig}
+              tone="past"
+              emptyText="Noch keine vergangenen Events dokumentiert."
+            />
           </div>
         </section>
-        {gigs.length > 0 && (
-          <NextGigFeature next={gigs[0]} onBookClick={() => setBookingOpen(true)} />
+        {upcoming.length > 0 && (
+          <NextGigFeature next={upcoming[0]} onBookClick={() => setBookingOpen(true)} />
         )}
         <ContactSection onBookClick={() => setBookingOpen(true)} />
       </main>
@@ -89,6 +105,9 @@ function Index() {
         <AdminModal gigs={gigs} onClose={() => setAdminOpen(false)} />
       )}
       {bookingOpen && <BookingModal onClose={() => setBookingOpen(false)} />}
+      {selectedGig && (
+        <GigDetailModal gig={selectedGig} onClose={() => setSelectedGig(null)} />
+      )}
     </div>
   );
 }
@@ -118,7 +137,7 @@ function Header({
           <img
             src={logoAsset.url}
             alt={`${DJ_NAME} Logo`}
-              className="h-10 w-10 object-contain sm:h-11 sm:w-11"
+            className="h-10 w-10 object-contain sm:h-11 sm:w-11 drop-shadow-[0_0_12px_oklch(0.511_0.230_276.966_/_0.5)]"
             width={44}
             height={44}
           />
@@ -134,7 +153,7 @@ function Header({
         <button
           type="button"
           onClick={onBookClick}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+          className="btn-fx inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-accent"
         >
           <Mail className="h-4 w-4" />
           <span className="hidden sm:inline">Kostenlos buchen</span>
@@ -178,7 +197,7 @@ function Hero({ onBookClick }: { onBookClick: () => void }) {
           <button
             type="button"
             onClick={onBookClick}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 glow-indigo"
+            className="btn-fx inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-indigo"
           >
             <Headphones className="h-4 w-4" />
             {DJ_NAME} buchen
@@ -202,16 +221,15 @@ function BioCard() {
         </h2>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground">
           Ich bin {DJ_NAME}, ein junger DJ aus Kürten. Auch wenn ich erst 13 Jahre alt bin,
-          brenne ich schon jetzt für elektronische Musik – von Uptempo bis zu EDM.
-          Jedes Set ist für mich eine Reise durch Rhythmus und Energie.
+          brenne ich schon jetzt für harte elektronische Musik – von Uptempo und Hardtechno über
+          Techno bis EDM. Jedes Set ist eine Reise durch Bass, Rhythmus und Energie.
         </p>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Ob Geburtstagsfeier, Schulparty, Jugendclub oder privates Event – ich bringe die richtige
-          Stimmung auf den Dancefloor. Alle Buchungen sind aktuell komplett kostenlos, weil ich vor
-          allem Erfahrung sammeln möchte.
+          Ob Club, Rave, Geburtstagsparty oder privates Event – ich bringe den Dancefloor zum Kochen.
+          Alle Buchungen sind aktuell komplett kostenlos, weil ich vor allem Erfahrung sammeln möchte.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          {["House", "Electronic", "Party", "Club"].map((t) => (
+          {["Uptempo", "Hardtechno", "Techno", "EDM", "Club", "Party"].map((t) => (
             <span key={t} className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
               {t}
             </span>
@@ -222,34 +240,55 @@ function BioCard() {
   );
 }
 
-function GigsCard({ gigs, onBookClick }: { gigs: Gig[]; onBookClick: () => void }) {
+function GigsColumn({
+  title,
+  gigs,
+  onSelect,
+  onBookClick,
+  tone,
+  emptyText,
+}: {
+  title: string;
+  gigs: Gig[];
+  onSelect: (g: Gig) => void;
+  onBookClick?: () => void;
+  tone: "upcoming" | "past";
+  emptyText: string;
+}) {
   return (
-    <article id="events" className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+    <article
+      id={tone === "upcoming" ? "events" : undefined}
+      className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+    >
       <div className="flex items-center justify-between">
         <span className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Kommende Events
+          {title}
         </span>
-        <button
-          type="button"
-          onClick={onBookClick}
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
-        >
-          Anfragen
-          <ArrowRight className="h-3 w-3" />
-        </button>
+        {onBookClick && (
+          <button
+            type="button"
+            onClick={onBookClick}
+            className="btn-fx inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-primary hover:text-primary/80"
+          >
+            Anfragen
+            <ArrowRight className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <div className="mt-6 space-y-4">
         {gigs.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Aktuell sind keine Events geplant. Schreib mir gerne für eine Buchung!
-          </p>
+          <p className="text-sm text-muted-foreground">{emptyText}</p>
         )}
         {gigs.map((gig) => (
-          <div
-            key={`${gig.date}-${gig.venue}`}
-            className="flex items-start gap-4 rounded-xl border border-border bg-background p-4 transition-colors hover:border-primary/30"
+          <button
+            key={gig.id}
+            type="button"
+            onClick={() => onSelect(gig)}
+            className={`card-lift group flex w-full items-start gap-4 rounded-xl border border-border bg-background p-4 text-left ${
+              tone === "past" ? "opacity-80 hover:opacity-100" : ""
+            }`}
           >
-            <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-border bg-card text-center">
+            <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
               <span className="font-display text-xs font-bold uppercase text-muted-foreground">
                 {format(parseISO(gig.date), "MMM", { locale: de })}
               </span>
@@ -259,15 +298,171 @@ function GigsCard({ gigs, onBookClick }: { gigs: Gig[]; onBookClick: () => void 
             </div>
             <div className="flex-1">
               <h3 className="font-display text-base font-bold text-foreground">{gig.venue}</h3>
-              <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                {gig.city}
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {gig.city}
+                </span>
+                {gig.time && (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {gig.time}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
+            <ArrowRight className="mt-2 h-4 w-4 flex-shrink-0 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-primary" />
+          </button>
         ))}
       </div>
     </article>
+  );
+}
+
+function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative my-8 w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in-95 fade-in duration-300"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Schließen"
+          className="btn-fx absolute right-4 top-4 z-10 rounded-full border border-border bg-background/80 p-2 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="relative border-b border-border bg-gradient-to-br from-secondary via-card to-card p-6 sm:p-10">
+          <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex items-start gap-5">
+            <div className="flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-background text-center glow-indigo">
+              <span className="font-display text-xs font-bold uppercase text-muted-foreground">
+                {format(parseISO(gig.date), "MMM", { locale: de })}
+              </span>
+              <span className="font-display text-3xl font-bold text-foreground leading-none">
+                {format(parseISO(gig.date), "d", { locale: de })}
+              </span>
+              <span className="font-display text-[10px] text-muted-foreground">
+                {format(parseISO(gig.date), "yyyy", { locale: de })}
+              </span>
+            </div>
+            <div className="flex-1 pr-8">
+              <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                gig.status === "upcoming"
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground"
+              }`}>
+                {gig.status === "upcoming" ? "Kommend" : "Vergangen"}
+              </span>
+              <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+                {gig.venue}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                {gig.city}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 p-6 sm:p-10">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DetailRow
+              icon={<Calendar className="h-4 w-4" />}
+              label="Datum"
+              value={format(parseISO(gig.date), "EEEE, dd. MMMM yyyy", { locale: de })}
+            />
+            {gig.time && (
+              <DetailRow
+                icon={<Clock className="h-4 w-4" />}
+                label="Uhrzeit"
+                value={gig.time}
+              />
+            )}
+            {gig.address && (
+              <DetailRow
+                icon={<MapPin className="h-4 w-4" />}
+                label="Adresse"
+                value={gig.address}
+                className="sm:col-span-2"
+              />
+            )}
+          </div>
+
+          {gig.description && (
+            <div>
+              <span className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Beschreibung
+              </span>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
+                {gig.description}
+              </p>
+            </div>
+          )}
+
+          {gig.location_info && (
+            <div>
+              <span className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Zur Location
+              </span>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                {gig.location_info}
+              </p>
+            </div>
+          )}
+
+          {gig.location_link && (
+            <a
+              href={gig.location_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-fx inline-flex items-center gap-2 rounded-md border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Location öffnen
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({
+  icon,
+  label,
+  value,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-xl border border-border bg-background p-4 ${className}`}>
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <p className="mt-1.5 text-sm text-foreground">{value}</p>
+    </div>
   );
 }
 
@@ -294,7 +489,7 @@ function NextGigFeature({ next, onBookClick }: { next: Gig; onBookClick: () => v
           <button
             type="button"
             onClick={onBookClick}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="btn-fx inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-indigo"
           >
             <Mail className="h-4 w-4" />
             Kostenlos anfragen
@@ -325,7 +520,7 @@ function ContactSection({ onBookClick }: { onBookClick: () => void }) {
             <button
               type="button"
               onClick={onBookClick}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 glow-indigo"
+              className="btn-fx inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-indigo"
             >
               <Mail className="h-4 w-4" />
               Jetzt kostenlos anfragen
@@ -334,7 +529,7 @@ function ContactSection({ onBookClick }: { onBookClick: () => void }) {
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              className="btn-fx inline-flex items-center gap-2 rounded-md border border-border bg-background px-6 py-3 text-sm font-medium text-foreground hover:bg-accent"
             >
               <Instagram className="h-4 w-4" />
               {INSTAGRAM_HANDLE}
@@ -396,17 +591,33 @@ function AdminModal({
   const [password, setPassword] = useState("");
   const [pwError, setPwError] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const [newGig, setNewGig] = useState<{ date: string; venue: string; city: string }>({
+  const [newGig, setNewGig] = useState({
     date: "",
     venue: "",
     city: "",
+    time: "",
+    address: "",
+    description: "",
+    location_info: "",
+    location_link: "",
+    status: "upcoming" as "upcoming" | "past",
   });
 
   const addMutation = useMutation({
-    mutationFn: (input: { date: string; venue: string; city: string }) =>
+    mutationFn: (input: typeof newGig) =>
       addGig({ data: { password, ...input } }),
     onSuccess: () => {
-      setNewGig({ date: "", venue: "", city: "" });
+      setNewGig({
+        date: "",
+        venue: "",
+        city: "",
+        time: "",
+        address: "",
+        description: "",
+        location_info: "",
+        location_link: "",
+        status: "upcoming",
+      });
       setMutationError(null);
       queryClient.invalidateQueries({ queryKey: ["gigs"] });
     },
@@ -439,12 +650,12 @@ function AdminModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 sm:p-8">
+      <div className="relative my-8 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 sm:p-8">
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="btn-fx absolute right-4 top-4 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <X className="h-5 w-5" />
         </button>
@@ -467,7 +678,7 @@ function AdminModal({
             {pwError && <p className="text-sm text-red-400">Falsches Passwort.</p>}
             <button
               type="submit"
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-fx w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
               Entsperren
             </button>
@@ -479,20 +690,27 @@ function AdminModal({
               <h2 className="font-display text-xl font-bold text-foreground">Events verwalten</h2>
             </div>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-56 overflow-y-auto rounded-lg border border-border bg-background/50 p-2">
               {gigs.length === 0 && (
-                <p className="text-sm text-muted-foreground">Noch keine Events.</p>
+                <p className="p-2 text-sm text-muted-foreground">Noch keine Events.</p>
               )}
               {gigs.map((g) => (
-                <div key={g.id} className="flex items-center gap-2 rounded-md border border-border bg-background p-2 text-sm">
+                <div key={g.id} className="flex items-center gap-2 rounded-md border border-border bg-card p-2 text-sm">
                   <span className="font-mono text-xs text-muted-foreground">{g.date}</span>
                   <span className="flex-1 truncate text-foreground">{g.venue} — {g.city}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    g.status === "upcoming"
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {g.status === "upcoming" ? "Kommend" : "Vergangen"}
+                  </span>
                   <button
                     type="button"
                     onClick={() => deleteMutation.mutate(g.id)}
                     disabled={deleteMutation.isPending}
                     aria-label="Löschen"
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-red-400 disabled:opacity-50"
+                    className="btn-fx rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-red-400 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -500,17 +718,26 @@ function AdminModal({
               ))}
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+            <div className="rounded-lg border border-border bg-background p-3 space-y-3">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Neues Event</p>
-              <input
-                type="date"
-                value={newGig.date}
-                onChange={(e) => setNewGig({ ...newGig, date: e.target.value })}
-                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={newGig.date}
+                  onChange={(e) => setNewGig({ ...newGig, date: e.target.value })}
+                  className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <input
+                  type="time"
+                  placeholder="Uhrzeit"
+                  value={newGig.time}
+                  onChange={(e) => setNewGig({ ...newGig, time: e.target.value })}
+                  className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </div>
               <input
                 type="text"
-                placeholder="Location (z.B. Sommerfest)"
+                placeholder="Location / Venue (z.B. Sommerfest)"
                 value={newGig.venue}
                 onChange={(e) => setNewGig({ ...newGig, venue: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
@@ -522,11 +749,55 @@ function AdminModal({
                 onChange={(e) => setNewGig({ ...newGig, city: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               />
+              <input
+                type="text"
+                placeholder="Vollständige Adresse (optional)"
+                value={newGig.address}
+                onChange={(e) => setNewGig({ ...newGig, address: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <textarea
+                placeholder="Beschreibung (optional)"
+                rows={2}
+                value={newGig.description}
+                onChange={(e) => setNewGig({ ...newGig, description: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <textarea
+                placeholder="Infos zur Location (optional)"
+                rows={2}
+                value={newGig.location_info}
+                onChange={(e) => setNewGig({ ...newGig, location_info: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <input
+                type="url"
+                placeholder="Link zur Location (optional, z.B. Google Maps)"
+                value={newGig.location_link}
+                onChange={(e) => setNewGig({ ...newGig, location_link: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                {(["upcoming", "past"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setNewGig({ ...newGig, status: s })}
+                    className={`btn-fx flex-1 rounded-md border px-3 py-2 text-xs font-bold uppercase tracking-widest ${
+                      newGig.status === s
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s === "upcoming" ? "Kommend" : "Vergangen"}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={submitNewGig}
                 disabled={addMutation.isPending}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                className="btn-fx inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Hinzufügen
@@ -541,7 +812,7 @@ function AdminModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="btn-fx flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Fertig
               </button>
@@ -618,15 +889,21 @@ function BookingModal({ onClose }: { onClose: () => void }) {
     "block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1.5";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 fade-in duration-300"
+      >
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="btn-fx absolute right-4 top-4 rounded-full border border-border bg-background/80 p-2 text-muted-foreground hover:text-foreground"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
 
         {status === "success" ? (
@@ -642,7 +919,7 @@ function BookingModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-fx mt-6 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-indigo"
             >
               Schließen
             </button>
@@ -723,14 +1000,14 @@ function BookingModal({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                className="btn-fx flex-1 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Abbrechen
               </button>
               <button
                 type="submit"
                 disabled={status === "sending"}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 glow-indigo"
+                className="btn-fx flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 glow-indigo"
               >
                 {status === "sending" ? (
                   <>
