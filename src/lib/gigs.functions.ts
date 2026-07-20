@@ -10,6 +10,12 @@ export type Gig = {
   date: string;
   venue: string;
   city: string;
+  time: string | null;
+  address: string | null;
+  description: string | null;
+  location_info: string | null;
+  location_link: string | null;
+  status: "upcoming" | "past";
 };
 
 function publicClient() {
@@ -26,7 +32,7 @@ export const listGigs = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
   const { data, error } = await supabase
     .from("gigs")
-    .select("id, date, venue, city")
+    .select("id, date, venue, city, time, address, description, location_info, location_link, status")
     .order("date", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as Gig[];
@@ -37,6 +43,12 @@ const addSchema = z.object({
   date: z.string().min(1),
   venue: z.string().min(1).max(200),
   city: z.string().min(1).max(120),
+  time: z.string().max(20).optional().nullable(),
+  address: z.string().max(300).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+  location_info: z.string().max(1000).optional().nullable(),
+  location_link: z.string().url().max(500).optional().nullable().or(z.literal("")),
+  status: z.enum(["upcoming", "past"]).default("upcoming"),
 });
 
 export const addGig = createServerFn({ method: "POST" })
@@ -46,10 +58,22 @@ export const addGig = createServerFn({ method: "POST" })
       throw new Error("Falsches Passwort.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const emptyToNull = (v: string | null | undefined) =>
+      v && v.trim().length > 0 ? v.trim() : null;
     const { data: row, error } = await supabaseAdmin
       .from("gigs")
-      .insert({ date: data.date, venue: data.venue, city: data.city })
-      .select("id, date, venue, city")
+      .insert({
+        date: data.date,
+        venue: data.venue,
+        city: data.city,
+        time: emptyToNull(data.time ?? null),
+        address: emptyToNull(data.address ?? null),
+        description: emptyToNull(data.description ?? null),
+        location_info: emptyToNull(data.location_info ?? null),
+        location_link: emptyToNull(data.location_link ?? null),
+        status: data.status,
+      })
+      .select("id, date, venue, city, time, address, description, location_info, location_link, status")
       .single();
     if (error) throw new Error(error.message);
     return row as Gig;
