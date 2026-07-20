@@ -16,24 +16,42 @@ export type Database = {
     Tables: {
       gigs: {
         Row: {
+          address: string | null
           city: string
           created_at: string
           date: string
+          description: string | null
           id: string
+          location_info: string | null
+          location_link: string | null
+          status: string
+          time: string | null
           venue: string
         }
         Insert: {
+          address?: string | null
           city: string
           created_at?: string
           date: string
+          description?: string | null
           id?: string
+          location_info?: string | null
+          location_link?: string | null
+          status?: string
+          time?: string | null
           venue: string
         }
         Update: {
+          address?: string | null
           city?: string
           created_at?: string
           date?: string
+          description?: string | null
           id?: string
+          location_info?: string | null
+          location_link?: string | null
+          status?: string
+          time?: string | null
           venue?: string
         }
         Relationships: []
