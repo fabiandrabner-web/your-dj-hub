@@ -889,15 +889,21 @@ function BookingModal({ onClose }: { onClose: () => void }) {
     "block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1.5";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative my-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 fade-in duration-300"
+      >
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="btn-fx absolute right-4 top-4 rounded-full border border-border bg-background/80 p-2 text-muted-foreground hover:text-foreground"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
 
         {status === "success" ? (
@@ -913,7 +919,7 @@ function BookingModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-fx mt-6 rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-indigo"
             >
               Schließen
             </button>
@@ -994,14 +1000,14 @@ function BookingModal({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                className="btn-fx flex-1 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Abbrechen
               </button>
               <button
                 type="submit"
                 disabled={status === "sending"}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 glow-indigo"
+                className="btn-fx flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 glow-indigo"
               >
                 {status === "sending" ? (
                   <>
