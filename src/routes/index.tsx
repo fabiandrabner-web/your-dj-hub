@@ -591,17 +591,33 @@ function AdminModal({
   const [password, setPassword] = useState("");
   const [pwError, setPwError] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const [newGig, setNewGig] = useState<{ date: string; venue: string; city: string }>({
+  const [newGig, setNewGig] = useState({
     date: "",
     venue: "",
     city: "",
+    time: "",
+    address: "",
+    description: "",
+    location_info: "",
+    location_link: "",
+    status: "upcoming" as "upcoming" | "past",
   });
 
   const addMutation = useMutation({
-    mutationFn: (input: { date: string; venue: string; city: string }) =>
+    mutationFn: (input: typeof newGig) =>
       addGig({ data: { password, ...input } }),
     onSuccess: () => {
-      setNewGig({ date: "", venue: "", city: "" });
+      setNewGig({
+        date: "",
+        venue: "",
+        city: "",
+        time: "",
+        address: "",
+        description: "",
+        location_info: "",
+        location_link: "",
+        status: "upcoming",
+      });
       setMutationError(null);
       queryClient.invalidateQueries({ queryKey: ["gigs"] });
     },
@@ -634,12 +650,12 @@ function AdminModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 sm:p-8">
+      <div className="relative my-8 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 sm:p-8">
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="btn-fx absolute right-4 top-4 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <X className="h-5 w-5" />
         </button>
@@ -662,7 +678,7 @@ function AdminModal({
             {pwError && <p className="text-sm text-red-400">Falsches Passwort.</p>}
             <button
               type="submit"
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-fx w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
               Entsperren
             </button>
@@ -674,20 +690,27 @@ function AdminModal({
               <h2 className="font-display text-xl font-bold text-foreground">Events verwalten</h2>
             </div>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-56 overflow-y-auto rounded-lg border border-border bg-background/50 p-2">
               {gigs.length === 0 && (
-                <p className="text-sm text-muted-foreground">Noch keine Events.</p>
+                <p className="p-2 text-sm text-muted-foreground">Noch keine Events.</p>
               )}
               {gigs.map((g) => (
-                <div key={g.id} className="flex items-center gap-2 rounded-md border border-border bg-background p-2 text-sm">
+                <div key={g.id} className="flex items-center gap-2 rounded-md border border-border bg-card p-2 text-sm">
                   <span className="font-mono text-xs text-muted-foreground">{g.date}</span>
                   <span className="flex-1 truncate text-foreground">{g.venue} — {g.city}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    g.status === "upcoming"
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {g.status === "upcoming" ? "Kommend" : "Vergangen"}
+                  </span>
                   <button
                     type="button"
                     onClick={() => deleteMutation.mutate(g.id)}
                     disabled={deleteMutation.isPending}
                     aria-label="Löschen"
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-red-400 disabled:opacity-50"
+                    className="btn-fx rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-red-400 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -695,17 +718,26 @@ function AdminModal({
               ))}
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+            <div className="rounded-lg border border-border bg-background p-3 space-y-3">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Neues Event</p>
-              <input
-                type="date"
-                value={newGig.date}
-                onChange={(e) => setNewGig({ ...newGig, date: e.target.value })}
-                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={newGig.date}
+                  onChange={(e) => setNewGig({ ...newGig, date: e.target.value })}
+                  className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <input
+                  type="time"
+                  placeholder="Uhrzeit"
+                  value={newGig.time}
+                  onChange={(e) => setNewGig({ ...newGig, time: e.target.value })}
+                  className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </div>
               <input
                 type="text"
-                placeholder="Location (z.B. Sommerfest)"
+                placeholder="Location / Venue (z.B. Sommerfest)"
                 value={newGig.venue}
                 onChange={(e) => setNewGig({ ...newGig, venue: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
@@ -717,11 +749,55 @@ function AdminModal({
                 onChange={(e) => setNewGig({ ...newGig, city: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               />
+              <input
+                type="text"
+                placeholder="Vollständige Adresse (optional)"
+                value={newGig.address}
+                onChange={(e) => setNewGig({ ...newGig, address: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <textarea
+                placeholder="Beschreibung (optional)"
+                rows={2}
+                value={newGig.description}
+                onChange={(e) => setNewGig({ ...newGig, description: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <textarea
+                placeholder="Infos zur Location (optional)"
+                rows={2}
+                value={newGig.location_info}
+                onChange={(e) => setNewGig({ ...newGig, location_info: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <input
+                type="url"
+                placeholder="Link zur Location (optional, z.B. Google Maps)"
+                value={newGig.location_link}
+                onChange={(e) => setNewGig({ ...newGig, location_link: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                {(["upcoming", "past"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setNewGig({ ...newGig, status: s })}
+                    className={`btn-fx flex-1 rounded-md border px-3 py-2 text-xs font-bold uppercase tracking-widest ${
+                      newGig.status === s
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s === "upcoming" ? "Kommend" : "Vergangen"}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={submitNewGig}
                 disabled={addMutation.isPending}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                className="btn-fx inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Hinzufügen
@@ -736,7 +812,7 @@ function AdminModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="btn-fx flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Fertig
               </button>
