@@ -627,6 +627,7 @@ function AdminModal({
     description: "",
     location_info: "",
     location_link: "",
+    image_url: "",
     status: "upcoming" as "upcoming" | "past",
   });
 
@@ -643,6 +644,7 @@ function AdminModal({
         description: "",
         location_info: "",
         location_link: "",
+        image_url: "",
         status: "upcoming",
       });
       setMutationError(null);
