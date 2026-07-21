@@ -299,14 +299,30 @@ function GigsColumn({
               tone === "past" ? "opacity-80 hover:opacity-100" : ""
             }`}
           >
-            <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
-              <span className="font-display text-xs font-bold uppercase text-muted-foreground">
-                {safeFormat(gig.date, "MMM")}
-              </span>
-              <span className="font-display text-xl font-bold text-foreground">
-                {safeFormat(gig.date, "d")}
-              </span>
-            </div>
+            {gig.image_url ? (
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-card transition-colors group-hover:border-primary/50">
+                <img
+                  src={gig.image_url}
+                  alt={gig.venue}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-background/80 py-0.5 text-center backdrop-blur-sm">
+                  <span className="font-display text-[10px] font-bold uppercase text-foreground leading-none">
+                    {safeFormat(gig.date, "d. MMM")}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-14 w-14 flex-shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
+                <span className="font-display text-xs font-bold uppercase text-muted-foreground">
+                  {safeFormat(gig.date, "MMM")}
+                </span>
+                <span className="font-display text-xl font-bold text-foreground">
+                  {safeFormat(gig.date, "d")}
+                </span>
+              </div>
+            )}
             <div className="flex-1">
               <h3 className="font-display text-base font-bold text-foreground">{gig.venue}</h3>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
@@ -360,6 +376,13 @@ function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
         </button>
 
         <div className="relative border-b border-border bg-gradient-to-br from-secondary via-card to-card p-6 sm:p-10">
+          {gig.image_url && (
+            <img
+              src={gig.image_url}
+              alt={gig.venue}
+              className="mb-6 h-48 w-full rounded-xl border border-border object-cover sm:h-64"
+            />
+          )}
           <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
           <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative flex items-start gap-5">
@@ -611,6 +634,7 @@ function AdminModal({
     description: "",
     location_info: "",
     location_link: "",
+    image_url: "",
     status: "upcoming" as "upcoming" | "past",
   });
 
@@ -627,6 +651,7 @@ function AdminModal({
         description: "",
         location_info: "",
         location_link: "",
+        image_url: "",
         status: "upcoming",
       });
       setMutationError(null);
@@ -788,6 +813,20 @@ function AdminModal({
                 onChange={(e) => setNewGig({ ...newGig, location_link: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               />
+              <input
+                type="url"
+                placeholder="Bild-URL (optional, z.B. https://...jpg)"
+                value={newGig.image_url}
+                onChange={(e) => setNewGig({ ...newGig, image_url: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              {newGig.image_url && (
+                <img
+                  src={newGig.image_url}
+                  alt="Vorschau"
+                  className="h-24 w-24 rounded-md border border-border object-cover"
+                />
+              )}
               <div className="flex gap-2">
                 {(["upcoming", "past"] as const).map((s) => (
                   <button

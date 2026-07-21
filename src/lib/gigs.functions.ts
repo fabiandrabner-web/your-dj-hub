@@ -15,6 +15,7 @@ export type Gig = {
   description: string | null;
   location_info: string | null;
   location_link: string | null;
+  image_url: string | null;
   status: "upcoming" | "past";
 };
 
@@ -32,7 +33,7 @@ export const listGigs = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
   const { data, error } = await supabase
     .from("gigs")
-    .select("id, date, venue, city, time, address, description, location_info, location_link, status")
+    .select("id, date, venue, city, time, address, description, location_info, location_link, image_url, status")
     .order("date", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as Gig[];
@@ -48,6 +49,7 @@ const addSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
   location_info: z.string().max(1000).optional().nullable(),
   location_link: z.string().url().max(500).optional().nullable().or(z.literal("")),
+  image_url: z.string().url().max(1000).optional().nullable().or(z.literal("")),
   status: z.enum(["upcoming", "past"]).default("upcoming"),
 });
 
@@ -71,9 +73,10 @@ export const addGig = createServerFn({ method: "POST" })
         description: emptyToNull(data.description ?? null),
         location_info: emptyToNull(data.location_info ?? null),
         location_link: emptyToNull(data.location_link ?? null),
+        image_url: emptyToNull(data.image_url ?? null),
         status: data.status,
       })
-      .select("id, date, venue, city, time, address, description, location_info, location_link, status")
+      .select("id, date, venue, city, time, address, description, location_info, location_link, image_url, status")
       .single();
     if (error) throw new Error(error.message);
     return row as Gig;
