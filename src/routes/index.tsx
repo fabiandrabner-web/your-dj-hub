@@ -376,6 +376,13 @@ function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
         </button>
 
         <div className="relative border-b border-border bg-gradient-to-br from-secondary via-card to-card p-6 sm:p-10">
+          {gig.image_url && (
+            <img
+              src={gig.image_url}
+              alt={gig.venue}
+              className="mb-6 h-48 w-full rounded-xl border border-border object-cover sm:h-64"
+            />
+          )}
           <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
           <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative flex items-start gap-5">
