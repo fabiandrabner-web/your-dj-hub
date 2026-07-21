@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+
+function safeFormat(dateStr: string | null | undefined, pattern: string) {
+  if (!dateStr) return "";
+  try {
+    const d = parseISO(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return format(d, pattern, { locale: de });
+  } catch {
+    return "";
+  }
+}
 import {
   ArrowRight,
   Calendar,
@@ -290,10 +301,10 @@ function GigsColumn({
           >
             <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
               <span className="font-display text-xs font-bold uppercase text-muted-foreground">
-                {format(parseISO(gig.date), "MMM", { locale: de })}
+                {safeFormat(gig.date, "MMM")}
               </span>
               <span className="font-display text-xl font-bold text-foreground">
-                {format(parseISO(gig.date), "d", { locale: de })}
+                {safeFormat(gig.date, "d")}
               </span>
             </div>
             <div className="flex-1">
@@ -354,13 +365,13 @@ function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
           <div className="relative flex items-start gap-5">
             <div className="flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-background text-center glow-indigo">
               <span className="font-display text-xs font-bold uppercase text-muted-foreground">
-                {format(parseISO(gig.date), "MMM", { locale: de })}
+                {safeFormat(gig.date, "MMM")}
               </span>
               <span className="font-display text-3xl font-bold text-foreground leading-none">
-                {format(parseISO(gig.date), "d", { locale: de })}
+                {safeFormat(gig.date, "d")}
               </span>
               <span className="font-display text-[10px] text-muted-foreground">
-                {format(parseISO(gig.date), "yyyy", { locale: de })}
+                {safeFormat(gig.date, "yyyy")}
               </span>
             </div>
             <div className="flex-1 pr-8">
@@ -386,7 +397,7 @@ function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
             <DetailRow
               icon={<Calendar className="h-4 w-4" />}
               label="Datum"
-              value={format(parseISO(gig.date), "EEEE, dd. MMMM yyyy", { locale: de })}
+              value={safeFormat(gig.date, "EEEE, dd. MMMM yyyy")}
             />
             {gig.time && (
               <DetailRow
@@ -482,7 +493,7 @@ function NextGigFeature({ next, onBookClick }: { next: Gig; onBookClick: () => v
             <div className="mt-2 flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span className="text-sm font-medium">
-                {format(parseISO(next.date), "EEEE, dd. MMMM yyyy", { locale: de })}
+                {safeFormat(next.date, "EEEE, dd. MMMM yyyy")}
               </span>
             </div>
           </div>
