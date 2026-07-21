@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+
+function safeFormat(dateStr: string | null | undefined, pattern: string) {
+  if (!dateStr) return "";
+  try {
+    const d = parseISO(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return format(d, pattern, { locale: de });
+  } catch {
+    return "";
+  }
+}
 import {
   ArrowRight,
   Calendar,
