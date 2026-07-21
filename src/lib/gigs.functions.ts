@@ -48,8 +48,24 @@ const addSchema = z.object({
   address: z.string().max(300).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
   location_info: z.string().max(1000).optional().nullable(),
-  location_link: z.string().url().max(500).optional().nullable().or(z.literal("")),
-  image_url: z.string().url().max(1000).optional().nullable().or(z.literal("")),
+  location_link: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim() : null))
+    .refine((v) => v === null || /^https?:\/\//i.test(v), {
+      message: "Link muss mit http:// oder https:// beginnen.",
+    }),
+  image_url: z
+    .string()
+    .max(1000)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim() : null))
+    .refine((v) => v === null || /^https?:\/\//i.test(v), {
+      message: "Bild-URL muss mit http:// oder https:// beginnen.",
+    }),
   status: z.enum(["upcoming", "past"]).default("upcoming"),
 });
 
