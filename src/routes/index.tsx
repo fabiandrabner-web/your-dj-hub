@@ -806,6 +806,20 @@ function AdminModal({
                 onChange={(e) => setNewGig({ ...newGig, location_link: e.target.value })}
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               />
+              <input
+                type="url"
+                placeholder="Bild-URL (optional, z.B. https://...jpg)"
+                value={newGig.image_url}
+                onChange={(e) => setNewGig({ ...newGig, image_url: e.target.value })}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              />
+              {newGig.image_url && (
+                <img
+                  src={newGig.image_url}
+                  alt="Vorschau"
+                  className="h-24 w-24 rounded-md border border-border object-cover"
+                />
+              )}
               <div className="flex gap-2">
                 {(["upcoming", "past"] as const).map((s) => (
                   <button
