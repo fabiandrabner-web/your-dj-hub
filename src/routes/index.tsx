@@ -299,14 +299,30 @@ function GigsColumn({
               tone === "past" ? "opacity-80 hover:opacity-100" : ""
             }`}
           >
-            <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
-              <span className="font-display text-xs font-bold uppercase text-muted-foreground">
-                {safeFormat(gig.date, "MMM")}
-              </span>
-              <span className="font-display text-xl font-bold text-foreground">
-                {safeFormat(gig.date, "d")}
-              </span>
-            </div>
+            {gig.image_url ? (
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-card transition-colors group-hover:border-primary/50">
+                <img
+                  src={gig.image_url}
+                  alt={gig.venue}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-background/80 py-0.5 text-center backdrop-blur-sm">
+                  <span className="font-display text-[10px] font-bold uppercase text-foreground leading-none">
+                    {safeFormat(gig.date, "d. MMM")}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-14 w-14 flex-shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card text-center transition-colors group-hover:border-primary/50">
+                <span className="font-display text-xs font-bold uppercase text-muted-foreground">
+                  {safeFormat(gig.date, "MMM")}
+                </span>
+                <span className="font-display text-xl font-bold text-foreground">
+                  {safeFormat(gig.date, "d")}
+                </span>
+              </div>
+            )}
             <div className="flex-1">
               <h3 className="font-display text-base font-bold text-foreground">{gig.venue}</h3>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
