@@ -3,7 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
-const ADMIN_PASSWORD = "23699.DJ_Palmeweb";
+function checkAdminPassword(input: string) {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) throw new Error("Admin-Passwort ist serverseitig nicht konfiguriert.");
+  if (input !== expected) throw new Error("Falsches Passwort.");
+}
+
+export const verifyAdminPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ password: z.string().min(1).max(200) }).parse(data))
+  .handler(async ({ data }) => {
+    checkAdminPassword(data.password);
+    return { ok: true as const };
+  });
 
 export type Gig = {
   id: string;
@@ -72,9 +83,7 @@ const addSchema = z.object({
 export const addGig = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => addSchema.parse(data))
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) {
-      throw new Error("Falsches Passwort.");
-    }
+    checkAdminPassword(data.password);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const emptyToNull = (v: string | null | undefined) =>
       v && v.trim().length > 0 ? v.trim() : null;
@@ -106,9 +115,7 @@ const deleteSchema = z.object({
 export const deleteGig = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => deleteSchema.parse(data))
   .handler(async ({ data }) => {
-    if (data.password !== ADMIN_PASSWORD) {
-      throw new Error("Falsches Passwort.");
-    }
+    checkAdminPassword(data.password);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("gigs").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
