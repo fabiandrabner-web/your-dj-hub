@@ -369,7 +369,7 @@ function GigDetailModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="btn-fx absolute right-4 top-4 z-10 rounded-full border border-border bg-background/80 p-2 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+          className="btn-fx fixed right-4 top-4 z-20 rounded-full border border-border bg-background/90 p-2 text-muted-foreground shadow-lg backdrop-blur-sm hover:text-foreground sm:absolute"
         >
           <X className="h-4 w-4" />
         </button>
