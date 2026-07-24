@@ -35,7 +35,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import heroImage from "../assets/dj-hero.jpg";
 import logoAsset from "../assets/dj-palme-logo.svg.asset.json";
 import { sendBookingRequest } from "@/lib/booking.functions";
-import { addGig, deleteGig, listGigs, type Gig } from "@/lib/gigs.functions";
+import { addGig, deleteGig, listGigs, verifyAdminPassword, type Gig } from "@/lib/gigs.functions";
 
 // --- DJ-Daten -----------------------------------------
 const DJ_NAME = "DJ_Palme";
@@ -43,7 +43,6 @@ const DJ_TAGLINE = "Elektronische Beats für die Nacht";
 const DJ_EMAIL = "fabian@drabner.de";
 const INSTAGRAM_URL = "https://instagram.com/dj_palme_0fficial";
 const INSTAGRAM_HANDLE = "@dj_palme_0fficial";
-const ADMIN_PASSWORD = "23699.DJ_Palmeweb";
 // ------------------------------------------------------
 
 export const Route = createFileRoute("/")({
@@ -669,12 +668,13 @@ function AdminModal({
     onError: (err: Error) => setMutationError(err.message),
   });
 
-  function submitPassword(e: React.FormEvent) {
+  async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    try {
+      await verifyAdminPassword({ data: { password } });
       setUnlocked(true);
       setPwError(false);
-    } else {
+    } catch {
       setPwError(true);
     }
   }
