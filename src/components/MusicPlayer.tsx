@@ -53,7 +53,7 @@ export function MusicPlayerBar() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+    <div className="fixed bottom-4 left-4 z-50 w-[calc(100vw-2rem)] max-w-xs rounded-2xl border border-border bg-card/95 p-3 shadow-2xl glow-indigo backdrop-blur-md">
       {current && (
         <audio
           ref={audioRef}
@@ -63,59 +63,59 @@ export function MusicPlayerBar() {
           onEnded={() => go(1)}
         />
       )}
-      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
-        <div className="flex items-center gap-3 sm:w-64">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/20 text-primary glow-indigo">
-            <Music2 className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate font-display text-sm font-bold text-foreground">
-              {current?.title ?? "Keine Tracks"}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {current ? `${current.artist || "DJ_Palme"} · ${current.genre}` : "—"}
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/20 text-primary">
+          {current?.cover_url ? (
+            <img src={current.cover_url} alt={current.title} className="h-full w-full object-cover" />
+          ) : (
+            <Music2 className="h-6 w-6" />
+          )}
         </div>
-
-        <div className="flex flex-1 items-center gap-3">
-          <button type="button" aria-label="Zurück" onClick={() => go(-1)} className="btn-fx rounded-full p-2 text-muted-foreground hover:text-foreground">
-            <SkipBack className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label={playing ? "Pause" : "Abspielen"}
-            onClick={() => setPlaying((p) => !p)}
-            className="btn-fx rounded-full bg-primary p-3 text-primary-foreground"
-          >
-            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
-          <button type="button" aria-label="Weiter" onClick={() => go(1)} className="btn-fx rounded-full p-2 text-muted-foreground hover:text-foreground">
-            <SkipForward className="h-4 w-4" />
-          </button>
-          <span className="hidden w-10 text-right font-display text-xs text-muted-foreground sm:block">{fmt(time)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.1}
-            value={time}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (audioRef.current) audioRef.current.currentTime = v;
-              setTime(v);
-            }}
-            className="flex-1 accent-primary"
-            aria-label="Position"
-          />
-          <span className="hidden w-10 font-display text-xs text-muted-foreground sm:block">{fmt(duration)}</span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-display text-sm font-bold text-foreground">{current?.title ?? "Keine Tracks"}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {current ? `${current.artist || "DJ_Palme"} · ${current.genre}` : "—"}
+          </p>
         </div>
-
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={duration || 0}
+        step={0.1}
+        value={time}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          if (audioRef.current) audioRef.current.currentTime = v;
+          setTime(v);
+        }}
+        className="mt-3 w-full accent-primary"
+        aria-label="Position"
+      />
+      <div className="flex justify-between font-display text-[10px] text-muted-foreground">
+        <span>{fmt(time)}</span>
+        <span>{fmt(duration)}</span>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <button type="button" aria-label="Zurück" onClick={() => go(-1)} className="btn-fx rounded-full p-2 text-muted-foreground hover:text-foreground">
+          <SkipBack className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          aria-label={playing ? "Pause" : "Abspielen"}
+          onClick={() => setPlaying((p) => !p)}
+          className="btn-fx rounded-full bg-primary p-3 text-primary-foreground"
+        >
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </button>
+        <button type="button" aria-label="Weiter" onClick={() => go(1)} className="btn-fx rounded-full p-2 text-muted-foreground hover:text-foreground">
+          <SkipForward className="h-4 w-4" />
+        </button>
         <select
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
           aria-label="Genre"
-          className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+          className="ml-auto min-w-0 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
         >
           {genres.map((g) => (
             <option key={g} value={g}>{g}</option>
@@ -133,6 +133,8 @@ export function TracksAdmin({ password }: { password: string }) {
   const [artist, setArtist] = useState("");
   const [genre, setGenre] = useState(TRACK_GENRES[0]);
   const [file, setFile] = useState<File | null>(null);
+  const [cover, setCover] = useState<File | null>(null);
+  const [formKey, setFormKey] = useState(0);
   const [err, setErr] = useState<string | null>(null);
 
   const upload = useMutation({
@@ -143,12 +145,23 @@ export function TracksAdmin({ password }: { password: string }) {
         contentType: file.type || "audio/mpeg",
       });
       if (error) throw new Error(error.message);
-      await addTrack({ data: { password, title, artist, genre, path } });
+      let cover_path: string | null = null;
+      if (cover) {
+        const c = await createTrackUpload({ data: { password, filename: cover.name } });
+        const r = await supabase.storage.from("tracks").uploadToSignedUrl(c.path, c.token, cover, {
+          contentType: cover.type || "image/jpeg",
+        });
+        if (r.error) throw new Error(r.error.message);
+        cover_path = c.path;
+      }
+      await addTrack({ data: { password, title, artist, genre, path, cover_path } });
     },
     onSuccess: () => {
       setTitle("");
       setArtist("");
       setFile(null);
+      setCover(null);
+      setFormKey((k) => k + 1);
       setErr(null);
       qc.invalidateQueries({ queryKey: ["tracks"] });
     },
@@ -173,12 +186,26 @@ export function TracksAdmin({ password }: { password: string }) {
         <select className={inputCls} value={genre} onChange={(e) => setGenre(e.target.value)}>
           {TRACK_GENRES.map((g) => <option key={g}>{g}</option>)}
         </select>
-        <input
-          className={inputCls}
-          type="file"
-          accept="audio/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
+        <label className="text-xs text-muted-foreground">
+          Audiodatei *
+          <input
+            key={`a${formKey}`}
+            className={inputCls}
+            type="file"
+            accept="audio/*"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <label className="text-xs text-muted-foreground sm:col-span-2">
+          Titelbild (optional)
+          <input
+            key={`c${formKey}`}
+            className={inputCls}
+            type="file"
+            accept="image/*"
+            onChange={(e) => setCover(e.target.files?.[0] ?? null)}
+          />
+        </label>
       </div>
       <button
         type="button"
