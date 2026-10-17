@@ -36,6 +36,7 @@ import heroImage from "../assets/dj-hero.jpg";
 import logoAsset from "../assets/dj-palme-logo.svg.asset.json";
 import { sendBookingRequest } from "@/lib/booking.functions";
 import { addGig, deleteGig, listGigs, verifyAdminPassword, type Gig } from "@/lib/gigs.functions";
+import { MusicPlayerBar, TracksAdmin } from "@/components/MusicPlayer";
 
 // --- DJ-Daten -----------------------------------------
 const DJ_NAME = "DJ_Palme";
@@ -111,6 +112,8 @@ function Index() {
         <ContactSection onBookClick={() => setBookingOpen(true)} />
       </main>
       <Footer />
+      <div className="h-28 sm:h-20" aria-hidden />
+      <MusicPlayerBar />
       {adminOpen && (
         <AdminModal gigs={gigs} onClose={() => setAdminOpen(false)} />
       )}
@@ -857,6 +860,8 @@ function AdminModal({
             {mutationError && (
               <p className="text-sm text-red-400">{mutationError}</p>
             )}
+
+            <TracksAdmin password={password} />
 
             <div className="flex gap-2">
               <button
