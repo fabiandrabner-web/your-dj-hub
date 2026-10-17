@@ -112,7 +112,6 @@ function Index() {
         <ContactSection onBookClick={() => setBookingOpen(true)} />
       </main>
       <Footer />
-      <div className="h-28 sm:h-20" aria-hidden />
       <MusicPlayerBar />
       {adminOpen && (
         <AdminModal gigs={gigs} onClose={() => setAdminOpen(false)} />

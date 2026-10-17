@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           artist: string | null
           audio_url: string
+          cover_path: string | null
           created_at: string
           genre: string
           id: string
@@ -72,6 +73,7 @@ export type Database = {
         Insert: {
           artist?: string | null
           audio_url: string
+          cover_path?: string | null
           created_at?: string
           genre: string
           id?: string
@@ -81,6 +83,7 @@ export type Database = {
         Update: {
           artist?: string | null
           audio_url?: string
+          cover_path?: string | null
           created_at?: string
           genre?: string
           id?: string

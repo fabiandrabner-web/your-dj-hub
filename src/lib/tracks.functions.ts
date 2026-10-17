@@ -7,6 +7,7 @@ export type Track = {
   artist: string | null;
   genre: string;
   audio_url: string;
+  cover_url: string | null;
 };
 
 function checkAdminPassword(input: string) {
@@ -19,11 +20,11 @@ export const listTracks = createServerFn({ method: "GET" }).handler(async () => 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("tracks")
-    .select("id, title, artist, genre, storage_path, audio_url")
+    .select("id, title, artist, genre, storage_path, audio_url, cover_path")
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   const rows = data ?? [];
-  const paths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
+  const paths = rows.flatMap((r) => [r.storage_path, r.cover_path]).filter((p): p is string => !!p);
   const signed = paths.length
     ? (await supabaseAdmin.storage.from("tracks").createSignedUrls(paths, 60 * 60 * 12)).data ?? []
     : [];
@@ -34,6 +35,7 @@ export const listTracks = createServerFn({ method: "GET" }).handler(async () => 
     artist: r.artist,
     genre: r.genre,
     audio_url: (r.storage_path && map.get(r.storage_path)) || r.audio_url,
+    cover_url: (r.cover_path && map.get(r.cover_path)) || null,
   })) as Track[];
 });
 
@@ -62,6 +64,7 @@ export const addTrack = createServerFn({ method: "POST" })
         artist: z.string().max(200).optional().nullable(),
         genre: z.string().min(1).max(60),
         path: z.string().min(1).max(300),
+        cover_path: z.string().max(300).optional().nullable(),
       })
       .parse(d),
   )
@@ -74,6 +77,7 @@ export const addTrack = createServerFn({ method: "POST" })
       genre: data.genre,
       storage_path: data.path,
       audio_url: data.path,
+      cover_path: data.cover_path || null,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -88,10 +92,11 @@ export const deleteTrack = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("tracks")
-      .select("storage_path")
+      .select("storage_path, cover_path")
       .eq("id", data.id)
       .maybeSingle();
-    if (row?.storage_path) await supabaseAdmin.storage.from("tracks").remove([row.storage_path]);
+    const files = [row?.storage_path, row?.cover_path].filter((p): p is string => !!p);
+    if (files.length) await supabaseAdmin.storage.from("tracks").remove(files);
     const { error } = await supabaseAdmin.from("tracks").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
