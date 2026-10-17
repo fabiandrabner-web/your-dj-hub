@@ -8,6 +8,13 @@
       "when": 1792256287792,
       "tag": "0000_create_tracks",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792256921510,
+      "tag": "0001_track_cover",
+      "breakpoints": true
     }
   ]
 }
