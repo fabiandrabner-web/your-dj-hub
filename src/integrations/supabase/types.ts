@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tracks: {
+        Row: {
+          artist: string | null
+          audio_url: string
+          created_at: string
+          genre: string
+          id: string
+          storage_path: string | null
+          title: string
+        }
+        Insert: {
+          artist?: string | null
+          audio_url: string
+          created_at?: string
+          genre: string
+          id?: string
+          storage_path?: string | null
+          title: string
+        }
+        Update: {
+          artist?: string | null
+          audio_url?: string
+          created_at?: string
+          genre?: string
+          id?: string
+          storage_path?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
